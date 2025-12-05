@@ -41,11 +41,12 @@ pipeline {
                     script {
                         def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         sh """
-                        ${scannerHome}/bin/sonar-scanner \
+                        "${scannerHome}/bin/sonar-scanner" \
                             -Dsonar.projectKey=pwa \
                             -Dsonar.sources=src \
                             -Dsonar.host.url=http://sonarqube:9000 \
-                            -Dsonar.token=$SONAR_TOKEN
+                            -Dsonar.token=$SONAR_TOKEN \
+                            -Dsonar.coverage.exclusions=src/service-worker.js,src/serviceWorkerRegistration.js
                         """
                     }
                 }
