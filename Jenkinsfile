@@ -60,33 +60,34 @@ pipeline {
             }
         }
 
-        stage('Deploy to Production') {
-            when {
-                expression { true }
-            }
-            steps {
-                sh """
-                echo "Instalando Vercel CLI y jq..."
-                npm install -g vercel
-                apt-get update && apt-get install -y jq
+            stage('Deploy to Production') {
+        when { expression { true } }
+        steps {
+            sh """
+            echo "Instalando Vercel CLI y jq..."
+            npm install -g vercel
+            apt-get update && apt-get install -y jq
 
-                export VERCEL_ORG_ID=$VERCEL_ORG_ID
-                export VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID
+            export VERCEL_ORG_ID=$VERCEL_ORG_ID
+            export VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID
 
-                echo "Ejecutando despliegue en Vercel..."
-                DEPLOY_OUTPUT=\$(vercel deploy --prod --yes --token=$VERCEL_TOKEN --output=json)
+            echo "Ejecutando despliegue en Vercel..."
 
-                echo "=== RAW DEPLOY OUTPUT ==="
-                echo "\$DEPLOY_OUTPUT"
+            # Ejecutamos deployment y guardamos la salida
+            vercel deploy --prod --yes --confirm --token=$VERCEL_TOKEN > deploy.txt
 
-                DEPLOY_URL=\$(echo "\$DEPLOY_OUTPUT" | jq -r '.url')
+            echo "=== RAW DEPLOY OUTPUT ==="
+            cat deploy.txt
 
-                echo "======================================"
-                echo "🚀 DEPLOY COMPLETADO"
-                echo "🌍 URL DE PRODUCCIÓN: https://\$DEPLOY_URL"
-                echo "======================================"
-                """
-            }
+            DEPLOY_URL=\$(tail -n 1 deploy.txt)
+
+            echo "======================================"
+            echo "🚀 DEPLOY COMPLETADO"
+            echo "🌍 URL DE PRODUCCIÓN: \$DEPLOY_URL"
+            echo "======================================"
+            """
         }
+    }
+
     }
 }
