@@ -42,10 +42,10 @@ pipeline {
                         def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         sh """
                         "${scannerHome}/bin/sonar-scanner" \
-                          -Dsonar.projectKey=pwa \
-                          -Dsonar.sources=src \
-                          -Dsonar.host.url=http://sonarqube:9000 \
-                          -Dsonar.login=$SONAR_TOKEN
+                            -Dsonar.projectKey=pwa \
+                            -Dsonar.sources=src \
+                            -Dsonar.host.url=http://sonarqube:9000 \
+                            -Dsonar.token=$SONAR_TOKEN
                         """
                     }
                 }
@@ -66,14 +66,25 @@ pipeline {
             }
             steps {
                 sh """
+                echo "Instalando Vercel CLI..."
                 npm install -g vercel
 
                 export VERCEL_ORG_ID=$VERCEL_ORG_ID
                 export VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID
 
-                vercel deploy --prod \
-                    --token=$VERCEL_TOKEN \
-                    --yes
+                echo "Ejecutando despliegue en Vercel..."
+                DEPLOY_OUTPUT=\$(vercel deploy --prod --yes --token=$VERCEL_TOKEN --output=json)
+
+                echo "=== RAW DEPLOY OUTPUT ==="
+                echo "\$DEPLOY_OUTPUT"
+
+                # Extraer URL del JSON
+                DEPLOY_URL=\$(echo "\$DEPLOY_OUTPUT" | grep -oP '"url":\\s*"\K[^"]+')
+
+                echo "======================================"
+                echo "🚀 DEPLOY COMPLETADO"
+                echo "🌍 URL DE PRODUCCIÓN: https://\$DEPLOY_URL"
+                echo "======================================"
                 """
             }
         }
