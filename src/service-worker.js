@@ -1,27 +1,19 @@
-const CACHE_NAME = "poke-cache-v1";
-
 /* eslint-disable no-restricted-globals */
+import { clientsClaim } from 'workbox-core';
+import { precacheAndRoute } from 'workbox-precaching';
+import { registerRoute } from 'workbox-routing';
+import { StaleWhileRevalidate } from 'workbox-strategies';
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      cache.addAll(["/", "/index.html", "/static/js/bundle.js"])
-    )
-  );
-});
+const RUNTIME_CACHE = 'poke-cache-v1';
 
-self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return (
-        cached ||
-        fetch(event.request).then((response) => {
-          return caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
-        })
-      );
-    })
-  );
-});
+self.skipWaiting();
+clientsClaim();
+
+// 👇 Esto es lo que necesita CRA para el build
+precacheAndRoute(self.__WB_MANIFEST || []);
+
+// 👇 Caché runtime similar a tu SW “manual”
+registerRoute(
+  ({ request }) => ['document', 'script', 'style'].includes(request.destination),
+  new StaleWhileRevalidate({ cacheName: RUNTIME_CACHE })
+);
