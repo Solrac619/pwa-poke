@@ -1,23 +1,24 @@
 /* eslint-disable no-restricted-globals */
-import { clientsClaim } from 'workbox-core';
-import { precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
 
-const RUNTIME_CACHE = 'poke-cache-v1';
+import { clientsClaim } from "workbox-core";
+import { precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { StaleWhileRevalidate } from "workbox-strategies";
 
-// 👉 Reemplazo necesario para sonar: usar globalThis
-globalThis.skipWaiting();
+// CRA requiere esto
+self.skipWaiting();
 clientsClaim();
 
-// 👉 Precarga generada automáticamente por CRA
-precacheAndRoute(globalThis.__WB_MANIFEST || []);
+// ⚠️ ESTA ES LA LÍNEA OBLIGATORIA EN CRA
+precacheAndRoute(self.__WB_MANIFEST);
 
-// 👉 Cache runtime (documentos, JS, CSS)
+// Cache runtime (opcional)
 registerRoute(
   ({ request }) =>
-    ['document', 'script', 'style'].includes(request.destination),
+    ["document", "script", "style", "image", "font"].includes(
+      request.destination
+    ),
   new StaleWhileRevalidate({
-    cacheName: RUNTIME_CACHE,
+    cacheName: "runtime-cache",
   })
 );
