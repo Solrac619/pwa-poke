@@ -2,13 +2,26 @@ pipeline {
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('sonarqube-token')
-        VERCEL_TOKEN = credentials('vercel-token')
-        VERCEL_ORG_ID = credentials('vercel-org-id')
+        SONAR_TOKEN       = credentials('sonarqube-token')
+        VERCEL_TOKEN      = credentials('vercel-token')
+        VERCEL_ORG_ID     = credentials('vercel-org-id')
         VERCEL_PROJECT_ID = credentials('vercel-project-id')
     }
 
     stages {
+
+        stage('Setup Node') {
+            steps {
+                sh """
+                apt-get update
+                apt-get install -y curl
+                curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                apt-get install -y nodejs
+                node -v
+                npm -v
+                """
+            }
+        }
 
         stage('Install') {
             steps {
@@ -23,21 +36,21 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-  steps {
-    withSonarQubeEnv('MySonar') {
-      script {
-        def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-        sh """
-          "${scannerHome}/bin/sonar-scanner" \
-            -Dsonar.projectKey=pwa \
-            -Dsonar.sources=src \
-            -Dsonar.host.url=http://sonarqube:9000 \
-            -Dsonar.login=$SONAR_TOKEN
-        """
-      }
-    }
-  }
-}
+            steps {
+                withSonarQubeEnv('MySonar') {
+                    script {
+                        def scannerHome = tool name: 'SonarScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        sh """
+                        "${scannerHome}/bin/sonar-scanner" \
+                          -Dsonar.projectKey=pwa \
+                          -Dsonar.sources=src \
+                          -Dsonar.host.url=http://sonarqube:9000 \
+                          -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
+            }
+        }
 
         stage("Quality Gate") {
             steps {
@@ -53,12 +66,14 @@ pipeline {
             }
             steps {
                 sh """
+                npm install -g vercel
+
                 export VERCEL_ORG_ID=$VERCEL_ORG_ID
                 export VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID
 
                 vercel deploy --prod \
-                --token=$VERCEL_TOKEN \
-                --yes
+                    --token=$VERCEL_TOKEN \
+                    --yes
                 """
             }
         }
